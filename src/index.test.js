@@ -1,7 +1,7 @@
-import { ExampleComponent } from '.'
+import AkvoCharts from '.';
 
-describe('ExampleComponent', () => {
+describe('AkvoCharts', () => {
   it('is truthy', () => {
-    expect(ExampleComponent).toBeTruthy()
-  })
-})
+    expect(AkvoCharts).toBeTruthy();
+  });
+});
