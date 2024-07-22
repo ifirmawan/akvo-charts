@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Echarts Wrapper for React Component",
   "author": "dedenbangkit",
-  "license": "",
+  "license": "AGPL-3.0",
   "repository": "akvo/akvo-charts",
   "main": "dist/index.js",
   "module": "dist/index.modern.js",
