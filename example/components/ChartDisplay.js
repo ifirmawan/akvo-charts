@@ -89,7 +89,20 @@ const ChartDisplay = () => {
       case chartTypes.STACK_LINE:
         return <StackLine {...props} />;
       case chartTypes.MAP:
-        return <MapView {...mapConfig} />;
+        const { layer, ...mapProps } = mapConfig;
+        return (
+          <MapView
+            layer={{
+              ...mapConfig.layer,
+              url:
+                mapConfig.layer?.url?.includes('/static') &&
+                process.env.NODE_ENV === 'production'
+                  ? `/akvo-charts${mapConfig.layer?.url}`
+                  : mapConfig?.layer?.url
+            }}
+            {...mapProps}
+          />
+        );
       default:
         return null;
     }
