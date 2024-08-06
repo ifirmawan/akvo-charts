@@ -1,31 +1,72 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import ReactJson from 'react-json-view';
 import {
   useChartContext,
   useChartDispatch
 } from '../context/ChartContextProvider';
+import { useDisplayContext } from '../context/DisplayContextProvider';
 import { BookOpenIcon, CheckIcon, TrashIcon } from './Icons';
 import SnackBar from './Snackbar';
 import { useLocalStorage } from '../utils';
+import {
+  excludeHorizontal,
+  excludeStackMapping,
+  basicChart,
+  stackChartExampleData,
+  chartTypes,
+  scatterPlotExampleData
+} from '../static/config';
 
 const JsonDataDisplay = () => {
   const [notify, setNotify] = useState(null);
   const [preload, setPreload] = useState(true);
+  const [mapPreload, setMapPreload] = useState(true);
 
-  const { isRaw, defaultConfig, rawConfig } = useChartContext();
+  const { isMap, mapConfig, isRaw, defaultConfig, rawConfig } =
+    useChartContext();
+  const { selectedChartType } = useDisplayContext();
+
+  const transformDefaultConfig = useMemo(() => {
+    let res = { ...defaultConfig };
+    if (!basicChart.includes(selectedChartType)) {
+      res = {
+        ...res,
+        data: stackChartExampleData
+      };
+    }
+
+    if (selectedChartType === chartTypes.SCATTER_PLOT) {
+      res = {
+        ...res,
+        data: scatterPlotExampleData
+      };
+    }
+    if (excludeHorizontal.includes(selectedChartType)) {
+      const transform = { ...res };
+      delete transform.horizontal;
+      res = transform;
+    }
+    if (excludeStackMapping.includes(selectedChartType)) {
+      const transform = { ...res };
+      delete transform.stackMapping;
+      res = transform;
+    }
+    return res;
+  }, [selectedChartType, defaultConfig]);
 
   const chartDispatch = useChartDispatch();
   const [defaultStore, setDefaultStore] = useLocalStorage(
     'defaultConfig',
-    defaultConfig
+    transformDefaultConfig
   );
   const [rawStore, setRawStore] = useLocalStorage('rawConfig', rawConfig);
+  const [mapStore, setMapStore] = useLocalStorage('mapConfig', mapConfig);
 
   const onJsonUpdate = ({ updated_src: payload }) => {
     chartDispatch({
-      type: 'UPDATE_CHART',
+      type: isMap ? 'UPDATE_MAP' : 'UPDATE_CHART',
       payload
     });
   };
@@ -48,11 +89,16 @@ const JsonDataDisplay = () => {
 
   const onSaveClick = () => {
     try {
-      if (isRaw) {
-        setRawStore(rawConfig);
+      if (isMap) {
+        setMapStore(mapConfig);
       } else {
-        setDefaultStore(defaultConfig);
+        if (isRaw) {
+          setRawStore(rawConfig);
+        } else {
+          setDefaultStore(transformDefaultConfig);
+        }
       }
+
       setNotify(`Configuration successfully saved`);
       setTimeout(() => {
         setNotify(null);
@@ -69,6 +115,7 @@ const JsonDataDisplay = () => {
       });
       setRawStore(null);
       setDefaultStore(null);
+      setMapStore(null);
       setNotify(`Configuration cleared successfully`);
       setTimeout(() => {
         setNotify(null);
@@ -86,11 +133,30 @@ const JsonDataDisplay = () => {
         payload: isRaw ? rawStore : defaultStore
       });
     }
-  }, [chartDispatch, rawStore, defaultStore, isRaw, preload]);
+    if (isMap && mapPreload) {
+      setMapPreload(false);
+      chartDispatch({
+        type: 'UPDATE_MAP',
+        payload: mapStore
+      });
+    }
+  }, [
+    chartDispatch,
+    rawStore,
+    defaultStore,
+    isRaw,
+    preload,
+    mapPreload,
+    isMap,
+    mapStore
+  ]);
 
   useEffect(() => {
     firstLoad();
   }, [firstLoad]);
+
+  const chartData = isRaw ? rawConfig : transformDefaultConfig;
+  const jsonData = isMap ? mapConfig : chartData;
 
   return (
     <div className="w-full relative">
@@ -140,7 +206,8 @@ const JsonDataDisplay = () => {
         </button>
       </div>
       <ReactJson
-        src={isRaw ? rawConfig : defaultConfig}
+        name="props"
+        src={jsonData}
         theme="monokai"
         displayDataTypes={false}
         onEdit={onJsonUpdate}
