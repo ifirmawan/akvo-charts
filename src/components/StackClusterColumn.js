@@ -1,9 +1,13 @@
 import React from 'react';
 import { useECharts } from '../hooks';
 import styles from '../styles.module.css';
-import { Tooltip } from '../utils/basicChartStyle';
 
-const getOptions = ({ horizontal = false, dimensions = [] }) => {
+const getOptions = ({
+  transformedConfig,
+  horizontal = false,
+  dimensions = [],
+  overrideItemStyle
+}) => {
   const series = dimensions.slice(1).map((dim) => ({
     name: dim,
     type: 'bar',
@@ -11,12 +15,13 @@ const getOptions = ({ horizontal = false, dimensions = [] }) => {
     encode: {
       x: horizontal ? dim : 'category',
       y: horizontal ? 'category' : dim
-    }
+    },
+    ...overrideItemStyle
   }));
 
   return {
     tooltip: {
-      ...Tooltip,
+      ...transformedConfig.tooltip,
       trigger: 'axis'
     },
     series
@@ -27,7 +32,13 @@ const StackClusterColumn = ({ config, data, horizontal = false }) => {
   const chartRef = useECharts({
     config: { ...config, horizontal },
     data,
-    getOptions: ({ dimensions }) => getOptions({ horizontal, dimensions })
+    getOptions: ({ dimensions, transformedConfig, overrideItemStyle }) =>
+      getOptions({
+        horizontal,
+        dimensions,
+        transformedConfig,
+        overrideItemStyle
+      })
   });
 
   return (

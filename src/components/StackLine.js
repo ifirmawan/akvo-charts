@@ -4,24 +4,17 @@ import styles from '../styles.module.css';
 
 const getOptions = ({
   dimensions,
-  stackMapping,
   transformedConfig,
   horizontal = true,
   overrideItemStyle
 }) => {
-  // Reverse the stackMapping to get a dimension to stack group map
-  const dimensionToStackMap = {};
-  Object.keys(stackMapping).forEach((stackGroup) => {
-    stackMapping[stackGroup].forEach((dim) => {
-      dimensionToStackMap[dim] = stackGroup;
-    });
-  });
+  const axis = horizontal ? 'yAxis' : 'xAxis';
 
-  // Create series based on the reversed stack mapping
   const series = dimensions.slice(1).map((dim) => ({
     name: dim,
-    type: 'bar',
-    stack: dimensionToStackMap[dim] || 'defaultStack',
+    type: 'line',
+    stack: 'defaultStack',
+    areaStyle: {},
     encode: {
       x: horizontal ? dim : 'category',
       y: horizontal ? 'category' : dim
@@ -30,22 +23,29 @@ const getOptions = ({
   }));
 
   return {
+    ...transformedConfig,
     tooltip: {
       ...transformedConfig.tooltip,
-      trigger: 'axis'
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross'
+      }
+    },
+    [axis]: {
+      ...transformedConfig[axis],
+      boundaryGap: false
     },
     series
   };
 };
 
-const StackBar = ({ config, data, stackMapping = {}, horizontal = true }) => {
+const StacLine = ({ config, data, horizontal = true }) => {
   const chartRef = useECharts({
     config: { ...config, horizontal },
     data,
     getOptions: ({ dimensions, transformedConfig, overrideItemStyle }) =>
       getOptions({
         dimensions,
-        stackMapping,
         horizontal,
         transformedConfig,
         overrideItemStyle
@@ -61,4 +61,4 @@ const StackBar = ({ config, data, stackMapping = {}, horizontal = true }) => {
   );
 };
 
-export default StackBar;
+export default StacLine;
